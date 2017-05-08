@@ -4,7 +4,7 @@ USER root
 
 RUN echo "deb http://ftp.de.debian.org/debian jessie-backports main" >> /etc/apt/sources.list \
  && apt-get update -qq \
- && apt-get install -qqy --no-install-recommends openjdk-8-jre \
+ && apt-get install -t jessie-backports -qqy --no-install-recommends openjdk-8-jre-headless \
  && apt-get clean \
  && rm -rf /var/lib/apt /tmp/* /var/tmp/*
 

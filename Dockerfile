@@ -104,6 +104,7 @@ RUN apt-get -qy install p11-kit && \
         --purpose=server-auth \
         /output/certs/java/cacerts && \
     # Make Java cacerts keystore available to the JVM
+    rm -f /output/jvm/lib/security/cacerts && \
     ln -s /etc/ssl/certs/java/cacerts /output/jvm/lib/security
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

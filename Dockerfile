@@ -61,11 +61,10 @@ RUN sh configure \
         --with-extra-cflags="${CFLAGS} -Wno-error -fno-delete-null-pointer-checks -fno-lifetime-dse" \
         --with-extra-cxxflags="${CXXFLAGS} -fno-delete-null-pointer-checks -fno-lifetime-dse" \
         --disable-freetype-bundling \
-        --disable-headful
-
-
-# Compile OpenJDK
-RUN make images COMPRESS_JARS=true
+        --disable-headful && \
+	\
+	# Compile OpenJDK
+    make images COMPRESS_JARS=true
 
 # Move and cleanup
 RUN mkdir /output && \

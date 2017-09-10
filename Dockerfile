@@ -39,7 +39,7 @@ RUN curl -sSL http://hg.openjdk.java.net/jdk${JDK_VER}u/jdk${JDK_VER}u/archive/$
     done
 
 # Apply appropriate patches
-rUN curl -sSL https://git.archlinux.org/svntogit/packages.git/plain/trunk/build_with_gcc6.patch?h=packages/java8-openjdk \
+RUN curl -sSL https://git.archlinux.org/svntogit/packages.git/plain/trunk/build_with_gcc6.patch?h=packages/java8-openjdk \
         | patch -p1
 
 # Configure OpenJDK

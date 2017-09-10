@@ -38,24 +38,34 @@ RUN curl -sSL http://hg.openjdk.java.net/jdk${JDK_VER}u/jdk${JDK_VER}u/archive/$
             | tar xj --strip-components=1 -C ${proj}; \
     done
 
+# Apply appropriate patches
+rUN curl -sSL https://git.archlinux.org/svntogit/packages.git/plain/trunk/build_with_gcc6.patch?h=packages/java8-openjdk \
+        | patch -p1
+
 # Configure OpenJDK
 RUN sh configure \
-        --prefix=/usr/lib \
+        --prefix=/usr/lib/jvm \
         --sysconfdir=/etc \
         --localstatedir=/var \
         --with-update-version="${JDK_UPD}" \
         --with-build-number="${JDK_BLD}" \
+        --with-jvm-variants=server \
+        --with-debug-level=release \
+        --disable-debug-symbols \
+        --disable-zip-debug-info \
         --enable-unlimited-crypto \
         --with-zlib=system \
         --with-giflib=system \
         --with-jobs="$(nproc)" \
-        --with-extra-cflags="${CFLAGS} -std=c++98 -Wno-error -fno-delete-null-pointer-checks -fno-lifetime-dse" \
-        --with-extra-cxxflags="${CXXFLAGS} -std=c++98 -fno-delete-null-pointer-checks -fno-lifetime-dse" \
+        --with-boot-jdk=/usr/lib/jvm/java-8-openjdk-amd64/ \
+        --with-extra-cflags="${CFLAGS} -Wno-error -fno-delete-null-pointer-checks -fno-lifetime-dse" \
+        --with-extra-cxxflags="${CXXFLAGS} -fno-delete-null-pointer-checks -fno-lifetime-dse" \
         --disable-freetype-bundling \
         --disable-headful
 
+
 # Compile OpenJDK
-RUN make DEBUG_BINARIES=true SCTP_WERROR= images
+RUN make images COMPRESS_JARS=true
 
 # Move and cleanup
 RUN mkdir /output && \

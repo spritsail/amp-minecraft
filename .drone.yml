@@ -19,7 +19,7 @@ pipeline:
     commands:
       - apk add --no-cache curl
       - docker run --name=DEV -d devbuild /bin/sh < mc-test.sh
-      - timeout -t 30 /bin/sh -c 'docker logs --tail="all" -f DEV | grep -qe "[Server thread/INFO]: Done ([0-9]\+\.[0-9]\+s)\!"'
+      - timeout -t 30 /bin/sh -c 'docker logs --tail="all" -f DEV | grep -qe "[Server thread/INFO]:\ Done ([0-9]\+\.[0-9]\+s)\!"'
       - docker kill DEV # Not really needed, but keeps things quick
 
   publish:

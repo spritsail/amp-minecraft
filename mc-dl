@@ -1,0 +1,10 @@
+#!/bin/sh
+set -e
+
+if [ -z "${MINECRAFT_VER}" ]; then
+  echo "Please set MINECRAFT_VER to the correct Minecraft version."
+  exit 1
+fi
+
+wget -O minecraft_server.jar "https://s3.amazonaws.com/Minecraft.Download/versions/$MINECRAFT_VER/minecraft_server.$MINECRAFT_VER.jar"
+echo "eula=true" >> eula.txt

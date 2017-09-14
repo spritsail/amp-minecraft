@@ -4,7 +4,7 @@ pipeline:
     volumes:
        - /var/run/docker.sock:/var/run/docker.sock
     commands:
-       - docker build -t mc-amp-dev . 
+       - docker build --no-cache -t mc-amp-dev .
 
   test:
     image: docker

@@ -35,4 +35,5 @@ pipeline:
        - docker tag mc-amp-dev adamant/minecraft-amp
        - docker login -u $DOCKER_USER -p $DOCKER_PASS
        - docker push adamant/minecraft-amp
+       - docker rmi mc-amp-dev:latest
        - echo "CONGRATS! SUCCESSFULLY BUILT MINECRAFT AMP!"

@@ -14,7 +14,7 @@ pipeline:
        - MINECRAFT_VER=1.12.1
     commands:
       - docker run --name=DEV -e MINECRAFT_VER -d --rm mc-amp-dev mc-test
-      - timeout -t 60 /bin/sh -xc 'docker logs --tail=all -f DEV | grep -qm 1 Done' || (docker logs DEV; docker kill DEV; exit 37)
+      - timeout -t 60 /bin/sh -xc 'docker logs --tail=all -f DEV 2>&1 | cat | grep -qm 1 Done' || (docker logs DEV; docker kill DEV; exit 37)
       - docker kill DEV # Not really needed, but keeps things quick
 
   publish:

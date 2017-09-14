@@ -13,9 +13,9 @@ pipeline:
     environment:
        - MINECRAFT_VER=1.12.1
     commands:
-      - CON_NAME=$(docker run -e MINECRAFT_VER -d --rm mc-amp-dev mc-test)
-      - timeout -t 60 /bin/sh -xc "docker logs --tail=all -f $$CON_NAME | grep -qm 1 Done" || (docker logs $$CON_NAME; docker kill $$CON_NAME; exit 37)
-      - docker kill $$CON_NAME # Not really needed, but keeps things quick
+      - docker run --name=DEV -e MINECRAFT_VER -d --rm mc-amp-dev mc-test
+      - timeout -t 60 /bin/sh -xc 'docker logs --tail=all -f DEV | grep -qm 1 Done' || (docker logs DEV; docker kill DEV; exit 37)
+      - docker kill DEV # Not really needed, but keeps things quick
 
   publish:
     image: docker

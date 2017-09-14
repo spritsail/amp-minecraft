@@ -1,36 +1,31 @@
-services:
-  docker:
-    image: docker:dind
-    privileged: true
-
 pipeline:
   build:
     image: docker
-    environment:
-       - DOCKER_HOST=tcp://docker:2375
+    volumes:
+       - /var/run/docker.sock:/var/run/docker.sock
     commands:
-       - docker build -t devbuild . 
+       - docker build -t mc-amp-dev . 
 
   test:
     image: docker
+    volumes:
+       - /var/run/docker.sock:/var/run/docker.sock
     environment:
-       - DOCKER_HOST=tcp://docker:2375
        - MINECRAFT_VER=1.12.1
     commands:
-      - apk add --no-cache coreutils
-      - docker run --name=DEV -e MINECRAFT_VER=1.12.1 -d devbuild mc-test
-      - timeout -t 30 /bin/sh -c 'docker logs --tail="all" -f DEV | grep -qe "[Server thread/INFO]:\ Done ([0-9]\+\.[0-9]\+s)\!"'
-      - docker kill DEV # Not really needed, but keeps things quick
+      - CON_NAME=$(docker run -e MINECRAFT_VER -d --rm mc-amp-dev mc-test)
+      - timeout -t 60 /bin/sh -xc 'docker logs --tail="all" -f $CON_NAME | grep -qm 1 Done' || (docker logs $CON_NAME; docker kill $CON_NAME; exit 37)
+      - docker kill $CON_NAME # Not really needed, but keeps things quick
 
   publish:
     image: docker
     when:
       event: [push, tag, deployment]
     secrets: [ DOCKER_USER, DOCKER_PASS ]
-    environment:
-       - DOCKER_HOST=tcp://docker:2375
+    volumes:
+       - /var/run/docker.sock:/var/run/docker.sock
     commands:
-       - docker tag devbuild adamant/minecraft-amp
+       - docker tag mc-amp-dev adamant/minecraft-amp
        - docker login -u $DOCKER_USER -p $DOCKER_PASS
        - docker push adamant/minecraft-amp
        - echo "CONGRATS! SUCCESSFULLY BUILT MINECRAFT AMP!"

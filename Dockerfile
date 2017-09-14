@@ -125,11 +125,11 @@ USER root
 COPY --from=builder /output/jvm /usr/lib/jvm
 COPY --from=builder /output/certs /etc/ssl/certs
 COPY --from=builder /lib/x86_64-linux-gnu/libz.so.1 /usr/lib
-COPY mc-* /usr/bin
+COPY mc-* /usr/bin/
 
 RUN ldconfig && \
     ln -sv /usr/lib/jvm/bin/* /usr/bin && \
-    chmod +x /usr/bin/mc-*
+    chmod +rx /usr/bin/mc-*
 
 USER amp
 

@@ -13,8 +13,7 @@ pipeline:
     environment:
        - MINECRAFT_VER=1.12.1
     commands:
-      - docker run --name=DEV -e MINECRAFT_VER -d --rm mc-amp-dev mc-test
-      - docker logs -f --tail=all DEV 2>&1 > loghack.txt &
+      - docker run --name=DEV -e MINECRAFT_VER -t --rm mc-amp-dev mc-test 2>&1 > loghack.txt &
       - timeout -t 60 /bin/sh -xc 'tail -f loghack.txt | grep -qm 1 Done' || (docker logs DEV; docker kill DEV; exit 37)
       - docker kill DEV # Not really needed, but keeps things quick
 

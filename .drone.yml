@@ -19,7 +19,7 @@ pipeline:
                 | tee /dev/stderr
                 | while read line; do
                     if grep -qm 1 '\[Server thread/INFO\]:\ Done ([0-9]\+\.[0-9]\+s)\!'; then
-                        docker stop $$CON_NAME;
+                        docker kill $$CON_NAME;
                         exit 0;
                     fi;
                   done" || { docker kill $$CON_NAME; exit 37; }

@@ -11,10 +11,10 @@ pipeline:
     volumes:
        - /var/run/docker.sock:/var/run/docker.sock
     environment:
-       - MINECRAFT_VER=1.12.1
+       - MINECRAFT_VER=1.12.2
     commands:
       - CON_NAME=$(docker run -d -e MINECRAFT_VER --rm mc-amp-dev mc-test)
-      - timeout -t 120 /bin/sh -xc
+      - timeout -t 180 /bin/sh -exc
             "docker logs --tail=all -f $$CON_NAME 2>&1
                 | tee /dev/stderr
                 | while read line; do

@@ -4,7 +4,7 @@ pipeline:
     volumes:
        - /var/run/docker.sock:/var/run/docker.sock
     commands:
-       - docker build --no-cache -t mc-amp-dev .
+       - docker build --pull --no-cache -t mc-amp-dev .
 
   test:
     image: docker
@@ -35,5 +35,5 @@ pipeline:
        - docker tag mc-amp-dev adamant/minecraft-amp
        - docker login -u $DOCKER_USER -p $DOCKER_PASS
        - docker push adamant/minecraft-amp
-       - docker rmi mc-amp-dev:latest
+       - docker rmi mc-amp-dev:latest adamant/minecraft-amp
        - echo "CONGRATS! SUCCESSFULLY BUILT MINECRAFT AMP!"

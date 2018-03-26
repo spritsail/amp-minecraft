@@ -1,4 +1,4 @@
-FROM frebib/debian-builder as builder
+FROM spritsail/debian-builder as builder
 
 # Hacky fix for installing openjdk
 RUN mkdir -p /usr/share/man/man1 && \
@@ -19,8 +19,8 @@ RUN mkdir -p /usr/share/man/man1 && \
         libgif-dev
 
 ARG JDK_VER=8 
-ARG JDK_UPD=141
-ARG JDK_BLD=15
+ARG JDK_UPD=172
+ARG JDK_BLD=03
 ARG JDK_FULLVER=jdk${JDK_VER}u${JDK_UPD}-b${JDK_BLD}
 
 WORKDIR /tmp/${JDK_FULLVER}
@@ -38,9 +38,7 @@ RUN curl -sSL http://hg.openjdk.java.net/jdk${JDK_VER}u/jdk${JDK_VER}u/archive/$
             | tar xj --strip-components=1 -C ${proj}; \
     done
 
-# Apply appropriate patches
-RUN curl -sSL https://git.archlinux.org/svntogit/packages.git/plain/trunk/build_with_gcc6.patch?h=packages/java8-openjdk \
-        | patch -p1
+ENV CFLAGS_EXTRA="-Wno-error=deprecated-declarations -fno-lifetime-dse -fno-delete-null-pointer-checks"
 
 # Configure OpenJDK
 RUN sh configure \
@@ -58,8 +56,8 @@ RUN sh configure \
         --with-giflib=system \
         --with-jobs="$(nproc)" \
         --with-boot-jdk=/usr/lib/jvm/java-8-openjdk-amd64/ \
-        --with-extra-cflags="${CFLAGS} -Wno-error -fno-delete-null-pointer-checks -fno-lifetime-dse" \
-        --with-extra-cxxflags="${CXXFLAGS} -fno-delete-null-pointer-checks -fno-lifetime-dse" \
+        --with-extra-cflags="${CFLAGS} ${CFLAGS_EXTRA}" \
+        --with-extra-cxxflags="${CXXFLAGS} ${CFLAGS_EXTRA}" \
         --disable-freetype-bundling \
         --disable-headful && \
 	\
@@ -67,7 +65,7 @@ RUN sh configure \
     make images COMPRESS_JARS=true
 
 # Move and cleanup
-RUN mkdir /output && \
+RUN mkdir -p /output && \
     cp -r build/*/images/j2re-image /output/jvm && \
     cd /output/jvm && \
     # Strip libraries because space
@@ -118,7 +116,7 @@ RUN apt-get -qy install p11-kit && \
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-FROM adamant/amp
+FROM spritsail/amp
 
 USER root
 

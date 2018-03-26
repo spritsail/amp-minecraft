@@ -1,15 +1,12 @@
 pipeline:
   build:
-    image: docker
-    volumes:
-       - /var/run/docker.sock:/var/run/docker.sock
-    commands:
-       - docker build --pull --no-cache -t mc-amp-dev .
+    image: spritsail/docker-build
+    volumes: [ '/var/run/docker.sock:/var/run/docker.sock' ]
+    repo: mc-amp-dev
 
   test:
     image: docker
-    volumes:
-       - /var/run/docker.sock:/var/run/docker.sock
+    volumes: [ '/var/run/docker.sock:/var/run/docker.sock' ]
     environment:
        - MINECRAFT_VER=1.12.2
     commands:
@@ -25,15 +22,17 @@ pipeline:
                   done" || { docker kill $$CON_NAME; exit 37; }
 
   publish:
-    image: docker
-    when:
-      event: [push, tag, deployment]
-    secrets: [ DOCKER_USER, DOCKER_PASS ]
-    volumes:
-       - /var/run/docker.sock:/var/run/docker.sock
-    commands:
-       - docker tag mc-amp-dev adamant/minecraft-amp
-       - docker login -u $DOCKER_USER -p $DOCKER_PASS
-       - docker push adamant/minecraft-amp
-       - docker rmi mc-amp-dev:latest adamant/minecraft-amp
-       - echo "CONGRATS! SUCCESSFULLY BUILT MINECRAFT AMP!"
+    image: spritsail/docker-publish
+    when: { branch: [ master ], event: [ push, tag, deployment ] }
+    volumes: [ '/var/run/docker.sock:/var/run/docker.sock' ]
+    secrets: [ docker_username, docker_password, microbadger_token ]
+    from: mc-amp-dev
+    repo: spritsail/amp-minecraft
+
+  notify:
+    image: appleboy/drone-telegram
+    when: { status: [ success, failure ] }
+    secrets: [ telegram_token, telegram_to ]
+    message: |
+      *{{repo.owner}}/{{repo.name}} [{{commit.branch}}]*: Build #{{build.number}}: *{{uppercase build.status}}*
+      {{build.link}}

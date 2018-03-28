@@ -1,3 +1,8 @@
+ARG JDK_VER=8 
+ARG JDK_UPD=172
+ARG JDK_BLD=03
+ARG OUTDIR=/output
+
 FROM spritsail/debian-builder as builder
 
 # Hacky fix for installing openjdk
@@ -18,10 +23,11 @@ RUN mkdir -p /usr/share/man/man1 && \
         libfreetype6-dev \
         libgif-dev
 
-ARG JDK_VER=8 
-ARG JDK_UPD=172
-ARG JDK_BLD=03
+ARG JDK_VER
+ARG JDK_UPD
+ARG JDK_BLD
 ARG JDK_FULLVER=jdk${JDK_VER}u${JDK_UPD}-b${JDK_BLD}
+ARG OUTDIR
 
 WORKDIR /tmp/${JDK_FULLVER}
 
@@ -65,9 +71,9 @@ RUN sh configure \
     make images COMPRESS_JARS=true
 
 # Move and cleanup
-RUN mkdir -p /output && \
-    cp -r build/*/images/j2re-image /output/jvm && \
-    cd /output/jvm && \
+RUN mkdir -p ${OUTDIR} && \
+    cp -r build/*/images/j2re-image ${OUTDIR}/jvm && \
+    cd ${OUTDIR}/jvm && \
     # Strip libraries because space
     find . -iname '*.so' -exec strip -s {} + && \
     find . -iname "*.diz" -delete && \
@@ -101,27 +107,36 @@ RUN mkdir -p /output && \
 
 # Generate java/cacerts keystore
 RUN apt-get -qy install p11-kit && \
-    mkdir -p /output/certs/java && \
+    mkdir -p ${OUTDIR}/certs/java && \
     # Copy cacerts from the debian builder
     # TODO: Move this into a separate package with update scripts
-    cp /etc/ssl/certs/ca-certificates.crt /output/certs && \
+    cp /etc/ssl/certs/ca-certificates.crt ${OUTDIR}/certs && \
     trust extract \
         --format=java-cacerts \
         --filter=ca-anchors \
         --purpose=server-auth \
-        /output/certs/java/cacerts && \
+        ${OUTDIR}/certs/java/cacerts && \
     # Make Java cacerts keystore available to the JVM
-    rm -f /output/jvm/lib/security/cacerts && \
-    ln -s /etc/ssl/certs/java/cacerts /output/jvm/lib/security
+    rm -f ${OUTDIR}/jvm/lib/security/cacerts && \
+    ln -s /etc/ssl/certs/java/cacerts ${OUTDIR}/jvm/lib/security
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 FROM spritsail/amp
 
+ARG JDK_VER
+ARG JDK_UPD
+ARG JDK_BLD
+ARG OUTDIR
+
+LABEL maintainer="Spritsail <minecraft@spritsail.io>" \
+      org.label-schema.name="AMP with Minecraft module" \
+      io.spritsail.version.openjdk=${JDK_VER}u${JDK_UPD}-b${JDK_BLD}
+
 USER root
 
-COPY --from=builder /output/jvm /usr/lib/jvm
-COPY --from=builder /output/certs /etc/ssl/certs
+COPY --from=builder ${OUTDIR}/jvm /usr/lib/jvm
+COPY --from=builder ${OUTDIR}/certs /etc/ssl/certs
 COPY --from=builder /lib/x86_64-linux-gnu/libz.so.1 /usr/lib
 COPY mc-* /usr/bin/
 

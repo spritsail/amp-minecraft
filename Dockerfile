@@ -1,6 +1,6 @@
 ARG JDK_VER=8
-ARG JDK_UPD=192
-ARG JDK_BLD=03
+ARG JDK_UPD=201
+ARG JDK_BLD=26
 ARG OUTDIR=/output
 
 FROM spritsail/debian-builder as builder

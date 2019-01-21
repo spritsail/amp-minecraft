@@ -23,11 +23,11 @@ pipeline:
 
   publish:
     image: spritsail/docker-publish
-    when: { branch: [ master ], event: [ push, tag, deployment ] }
+    when: { branch: [ spigot ], event: [ push, tag, deployment ] }
     volumes: [ '/var/run/docker.sock:/var/run/docker.sock' ]
     secrets: [ docker_username, docker_password, microbadger_token ]
     from: mc-amp-dev
-    repo: spritsail/amp-minecraft
+    repo: spritsail/amp-minecraft:spigot
 
   notify:
     image: appleboy/drone-telegram

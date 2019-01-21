@@ -122,7 +122,7 @@ RUN apt-get -qy install p11-kit && \
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-FROM spritsail/amp
+FROM spritsail/amp:1.7
 
 ARG JDK_VER
 ARG JDK_UPD
@@ -139,10 +139,11 @@ COPY --from=builder ${OUTDIR}/jvm /usr/lib/jvm
 COPY --from=builder ${OUTDIR}/certs /etc/ssl/certs
 COPY --from=builder /lib/x86_64-linux-gnu/libz.so.1 /usr/lib
 COPY mc-* /usr/bin/
+COPY git /usr/bin/
 
 RUN ldconfig && \
     ln -sv /usr/lib/jvm/bin/* /usr/bin && \
-    chmod +rx /usr/bin/mc-*
+    chmod +rx /usr/bin/mc-* /usr/bin/git
 
 USER amp
 

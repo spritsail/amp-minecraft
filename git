@@ -1,0 +1,5 @@
+#!/bin/sh
+# This file is a very, very ugly hack to avoid installing all of git. Spigots BuildTools.jar requires an entire git install
+# just to update two git config settings, which it then promptly ignores. This fixes that.
+
+exit 0

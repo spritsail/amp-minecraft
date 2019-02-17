@@ -135,7 +135,7 @@ ARG OUTDIR
 
 WORKDIR /tmp/libressl
 
-RUN apt-get install -qy gettext wget
+RUN apt-get install -qy zlib1g-dev gettext wget
 
 # Build and install LibreSSL
 RUN curl -sSL https://ftp.openbsd.org/pub/OpenBSD/LibreSSL/libressl-${LIBRE_VER}.tar.gz \

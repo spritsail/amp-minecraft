@@ -20,6 +20,13 @@ pipeline:
                         exit 0;
                     fi;
                   done" || { docker kill $$CON_NAME; exit 37; }
+  test-spigot:
+    image: mc-amp-dev
+    commands:
+      - export HOME=~amp
+      - cd $HOME
+      - wget https://hub.spigotmc.org/jenkins/job/BuildTools/lastSuccessfulBuild/artifact/target/BuildTools.jar
+      - java -Xmx1G -jar BuildTools.jar
 
   publish:
     image: spritsail/docker-publish

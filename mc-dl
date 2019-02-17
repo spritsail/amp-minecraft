@@ -6,5 +6,19 @@ if [ -z "${MINECRAFT_VER}" ]; then
   exit 1
 fi
 
-wget -O minecraft_server.jar "https://s3.amazonaws.com/Minecraft.Download/versions/$MINECRAFT_VER/minecraft_server.$MINECRAFT_VER.jar"
+# This is a hack to install jq because we don't have it in busybox yet
+if ! which jq <&- >/dev/null 2>&1; then
+    JQ_VER=${JQ_VER:-1.6}
+    wget -O /tmp/jq https://github.com/stedolan/jq/releases/download/jq-${JQ_VER}/jq-linux64
+    chmod +x /tmp/jq
+    PATH=$PATH:/tmp
+fi
+
+# Fetch the server jar by jumping through some Microsoft-shaped hoops
+wget -O- https://launchermeta.mojang.com/mc/game/version_manifest.json \
+    | jq -r ".versions[] | select(.id == \"$MINECRAFT_VER\") | .url" \
+    | xargs wget -O- \
+    | jq -r ".downloads.server.url" \
+    | xargs wget -O minecraft_server.jar
+
 echo "eula=true" >> eula.txt

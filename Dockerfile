@@ -135,7 +135,7 @@ ARG OUTDIR
 
 WORKDIR /tmp/libressl
 
-RUN apt-get install -qy zlib1g-dev gettext wget
+RUN apt-get install -qy zlib1g-dev gettext
 
 # Build and install LibreSSL
 RUN curl -sSL https://ftp.openbsd.org/pub/OpenBSD/LibreSSL/libressl-${LIBRE_VER}.tar.gz \
@@ -186,15 +186,17 @@ RUN curl -fL https://curl.haxx.se/download/curl-${CURL_VER}.tar.gz | tar xz --st
 
 RUN mkdir -p /output/usr/lib output \
  && make -j$(nproc) DESTDIR=$PWD/output install \
- && make install \
  && cp /tmp/curl/output/usr/lib/libcurl.so* ${OUTDIR}/usr/lib
 
 WORKDIR /tmp/git
 
-RUN wget -O- https://www.kernel.org/pub/software/scm/git/git-${GIT_VER}.tar.xz | tar xJ --strip-components=1 \
+RUN curl -fL https://www.kernel.org/pub/software/scm/git/git-${GIT_VER}.tar.xz | tar xJ --strip-components=1 \
+ && export LDFLAGS="$LDFLAGS -L/tmp/curl/output/usr" \
+ && export PATH="$PATH:/tmp/curl/output/usr/bin" \
  && ./configure \
         --prefix=/usr \
         --sysconfdir=/etc \
+        --with-curl=/tmp/curl/output/usr \
  && make -j "$(nproc)" DESTDIR=${OUTDIR} install \
  && rm -r ${OUTDIR}/usr/share/git-gui ${OUTDIR}/usr/share/gitk ${OUTDIR}/usr/share/gitweb ${OUTDIR}/usr/share/locale \
           ${OUTDIR}/usr/bin/git-* ${OUTDIR}/usr/bin/gitk \

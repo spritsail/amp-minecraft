@@ -8,7 +8,7 @@ pipeline:
     image: docker
     volumes: [ '/var/run/docker.sock:/var/run/docker.sock' ]
     environment:
-       - MINECRAFT_VER=1.12.2
+       - MINECRAFT_VER=1.13.2
     commands:
       - CON_NAME=$(docker run -d -e MINECRAFT_VER --rm mc-amp-dev mc-test)
       - timeout -t 180 /bin/sh -exc
@@ -25,14 +25,11 @@ pipeline:
     image: spritsail/docker-publish
     when: { branch: [ master ], event: [ push, tag, deployment ] }
     volumes: [ '/var/run/docker.sock:/var/run/docker.sock' ]
-    secrets: [ docker_username, docker_password, microbadger_token ]
+    secrets: [ docker_username, docker_password ]
     from: mc-amp-dev
     repo: spritsail/amp-minecraft
 
   notify:
-    image: appleboy/drone-telegram
+    image: spritsail/notify
     when: { status: [ success, failure ] }
-    secrets: [ telegram_token, telegram_to ]
-    message: |
-      *{{repo.owner}}/{{repo.name}} [{{commit.branch}}]*: Build #{{build.number}}: *{{uppercase build.status}}*
-      {{build.link}}
+    secrets: [ webhook_url, notify_token ]

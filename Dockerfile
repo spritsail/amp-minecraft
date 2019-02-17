@@ -1,9 +1,18 @@
+ARG CURL_VER=7.63.0
+ARG LIBRE_VER=2.8.2
+ARG GIT_VER=2.20.1
 ARG JDK_VER=8
 ARG JDK_UPD=201
 ARG JDK_BLD=26
 ARG OUTDIR=/output
 
-FROM spritsail/debian-builder as builder
+FROM spritsail/debian-builder as java
+
+ARG JDK_VER
+ARG JDK_UPD
+ARG JDK_BLD
+ARG JDK_FULLVER=jdk${JDK_VER}u${JDK_UPD}-b${JDK_BLD}
+ARG OUTDIR
 
 # Hacky fix for installing openjdk
 RUN mkdir -p /usr/share/man/man1 && \
@@ -23,11 +32,6 @@ RUN mkdir -p /usr/share/man/man1 && \
         libfreetype6-dev \
         libgif-dev
 
-ARG JDK_VER
-ARG JDK_UPD
-ARG JDK_BLD
-ARG JDK_FULLVER=jdk${JDK_VER}u${JDK_UPD}-b${JDK_BLD}
-ARG OUTDIR
 
 WORKDIR /tmp/${JDK_FULLVER}
 
@@ -121,6 +125,82 @@ RUN apt-get -qy install p11-kit && \
     ln -s /etc/ssl/certs/java/cacerts ${OUTDIR}/jvm/lib/security
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# This entire stage is because Spigot. Thanks Spigot. Thpigot.
+
+FROM spritsail/debian-builder as git
+ARG CURL_VER
+ARG LIBRE_VER
+ARG GIT_VER
+ARG OUTDIR
+
+WORKDIR /tmp/libressl
+
+RUN apt-get install -qy gettext wget
+
+# Build and install LibreSSL
+RUN curl -sSL https://ftp.openbsd.org/pub/OpenBSD/LibreSSL/libressl-${LIBRE_VER}.tar.gz \
+        | tar xz --strip-components=1 \
+ && ./configure --prefix=/usr \
+ && make -j "$(nproc)" install
+
+WORKDIR /tmp/curl
+
+RUN curl -fL https://curl.haxx.se/download/curl-${CURL_VER}.tar.gz | tar xz --strip-components=1 \
+ && autoreconf -sif \
+ && ./configure \
+        --prefix=/usr \
+        --enable-ipv6 \
+        --enable-optimize \
+        --enable-symbol-hiding \
+        --enable-versioned-symbols \
+        --enable-threaded-resolver \
+        --with-ssl \
+        --disable-crypto-auth \
+        --disable-curldebug \
+        --disable-dependency-tracking \
+        --disable-dict \
+        --disable-gopher \
+        --disable-imap \
+        --disable-libcurl-option \
+        --disable-ldap \
+        --disable-ldaps \
+        --disable-manual \
+        --disable-ntlm-wb \
+        --disable-pop3 \
+        --disable-rtsp \
+        --disable-smb \
+        --disable-smtp \
+        --disable-sspi \
+        --disable-telnet \
+        --disable-tftp \
+        --disable-ftp \
+        --disable-tls-srp \
+        --disable-verbose \
+        --without-axtls \
+        --without-zlib \
+        --without-libmetalink \
+        --without-libpsl \
+        --without-librtmp \
+        --without-winidn \
+ && make -j$(nproc)
+
+RUN mkdir -p /output/usr/lib output \
+ && make -j$(nproc) DESTDIR=$PWD/output install \
+ && make install \
+ && cp /tmp/curl/output/usr/lib/libcurl.so* ${OUTDIR}/usr/lib
+
+WORKDIR /tmp/git
+
+RUN wget -O- https://www.kernel.org/pub/software/scm/git/git-${GIT_VER}.tar.xz | tar xJ --strip-components=1 \
+ && ./configure \
+        --prefix=/usr \
+        --sysconfdir=/etc \
+ && make -j "$(nproc)" DESTDIR=${OUTDIR} install \
+ && rm -r ${OUTDIR}/usr/share/git-gui ${OUTDIR}/usr/share/gitk ${OUTDIR}/usr/share/gitweb ${OUTDIR}/usr/share/locale \
+          ${OUTDIR}/usr/bin/git-* ${OUTDIR}/usr/bin/gitk \
+          ${OUTDIR}/usr/libexec/git-core/{mergetools,git-sh-*,git-imap-send,git-shell,git-remote-testsvn,git-credential-store,git-credential-cache--daemon,git-credential-cache,git-cvsserver,git-daemon,git-p4,git-citool,git-svn,git-archimport,git-cvsimport,git-send-email,git-http-backend}
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 FROM spritsail/amp
 
@@ -131,13 +211,17 @@ ARG OUTDIR
 
 LABEL maintainer="Spritsail <minecraft@spritsail.io>" \
       org.label-schema.name="AMP with Minecraft module" \
-      io.spritsail.version.openjdk=${JDK_VER}u${JDK_UPD}-b${JDK_BLD}
+      io.spritsail.version.openjdk=${JDK_VER}u${JDK_UPD}-b${JDK_BLD} \
+      io.spritsail.version.curl=${CURL_VER} \
+      io.spritsail.version.libressl=${LIBRE_VER} \
+      io.spritsail.version.git=${GIT_VER}
 
 USER root
 
-COPY --from=builder ${OUTDIR}/jvm /usr/lib/jvm
-COPY --from=builder ${OUTDIR}/certs /etc/ssl/certs
-COPY --from=builder /lib/x86_64-linux-gnu/libz.so.1 /usr/lib
+COPY --from=java ${OUTDIR}/jvm /usr/lib/jvm
+COPY --from=java ${OUTDIR}/certs /etc/ssl/certs
+COPY --from=java /lib/x86_64-linux-gnu/libz.so.1 /usr/lib
+COPY --from=git ${OUTDIR} /
 COPY mc-* /usr/bin/
 
 RUN ldconfig && \
